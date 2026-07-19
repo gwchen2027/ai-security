@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI漏洞防护与扫毒系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header { text-align: center; padding: 30px 0; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,210,255,0.3); }
+        .header p { color: #aaa; font-size: 1rem; }
+        
+        /* Cards */
+        .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 25px; margin-bottom: 20px; transition: all 0.3s; }
+        .card:hover { border-color: rgba(0,210,255,0.5); box-shadow: 0 0 30px rgba(0,210,255,0.1); }
+        .card h2 { font-size: 1.3rem; margin-bottom: 15px; color: #00d2ff; display: flex; align-items: center; gap: 10px; }
+        .card h2 .icon { font-size: 1.5rem; }
+        
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .tab { padding: 12px 24px; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s; color: #aaa; }
+        .tab:hover { color: #fff; }
+        .tab.active { color: #00d2ff; border-bottom-color: #00d2ff; }
+        
+        /* Textarea */
+        .textarea { width: 100%; min-height: 200px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 15px; color: #fff; font-family: 'Consolas', monospace; font-size: 0.9rem; resize: vertical; }
+        .textarea:focus { outline: none; border-color: #00d2ff; }
+        
+        /* Buttons */
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(90deg, #00d2ff, #3a7bd5); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,210,255,0.4); }
+        .btn-danger { background: linear-gradient(90deg, #ff416c, #ff4b2b); color: #fff; }
+        .btn-success { background: linear-gradient(90deg, #11998e, #38ef7d); color: #fff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Drop Zone */
+        .drop-zone { border: 2px dashed rgba(255,255,255,0.3); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #00d2ff; background: rgba(0,210,255,0.05); }
+        .drop-zone .icon { font-size: 3rem; margin-bottom: 10px; }
+        .drop-zone p { color: #aaa; }
+        
+        /* Results */
+        .results { margin-top: 20px; }
+        .result-item { background: rgba(0,0,0,0.3); border-left: 4px solid #444; padding: 15px; margin-bottom: 10px; border-radius: 0 8px 8px 0; }
+        .result-item.critical { border-left-color: #ff0040; background: rgba(255,0,64,0.1); }
+        .result-item.high { border-left-color: #ff6600; background: rgba(255,102,0,0.1); }
+        .result-item.medium { border-left-color: #ffcc00; background: rgba(255,204,0,0.1); }
+        .result-item.low { border-left-color: #00ccff; background: rgba(0,204,255,0.1); }
+        .result-item.clean { border-left-color: #00ff88; background: rgba(0,255,136,0.1); }
+        .result-item .title { font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .result-item .desc { color: #ccc; font-size: 0.9rem; }
+        .result-item .match { background: rgba(255,0,64,0.2); padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+        
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-box .number { font-size: 2rem; font-weight: 700; color: #00d2ff; }
+        .stat-box .label { font-size: 0.8rem; color: #aaa; margin-top: 5px; }
+        .stat-box.critical .number { color: #ff0040; }
+        .stat-box.high .number { color: #ff6600; }
+        .stat-box.medium .number { color: #ffcc00; }
+        .stat-box.clean .number { color: #00ff88; }
+        
+        /* Logs */
+        .log-table { width: 100%; border-collapse: collapse; }
+        .log-table th, .log-table td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; }
+        .log-table th { color: #00d2ff; font-weight: 600; }
+        .severity-badge { padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .severity-CRITICAL { background: rgba(255,0,64,0.2); color: #ff0040; }
+        .severity-HIGH { background: rgba(255,102,0,0.2); color: #ff6600; }
+        .severity-MEDIUM { background: rgba(255,204,0,0.2); color: #ffcc00; }
+        .severity-LOW { background: rgba(0,204,255,0.2); color: #00ccff; }
+        .severity-INFO { background: rgba(0,255,136,0.2); color: #00ff88; }
+        
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 20px; }
+        .loading.active { display: block; }
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #00d2ff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Footer */
+        .footer { text-align: center; padding: 30px 0; color: #666; font-size: 0.8rem; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; color: #fff; font-weight: 600; z-index: 9999; animation: slideIn 0.3s; }
+        .toast.success { background: rgba(0,255,136,0.9); }
+        .toast.error { background: rgba(255,0,64,0.9); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ AI漏洞防护与扫毒系统</h1>
+            <p>AI Security Scanner & Antivirus v1.0.0</p>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('text')">📝 文本扫描</div>
+            <div class="tab" onclick="switchTab('file')">📁 文件扫描</div>
+            <div class="tab" onclick="switchTab('batch')">📦 批量扫描</div>
+            <div class="tab" onclick="switchTab('rules')">📋 检测规则</div>
+            <div class="tab" onclick="switchTab('logs')">📊 安全日志</div>
+        </div>
+        
+        <!-- 文本扫描 -->
+        <div id="tab-text" class="card">
+            <h2><span class="icon">📝</span> AI文本漏洞扫描</h2>
+            <p style="color:#aaa; margin-bottom:15px;">检测Prompt注入、数据泄露、恶意代码等AI安全威胁</p>
+            <textarea id="scanText" class="textarea" placeholder="请输入要扫描的文本内容...&#10;&#10;示例威胁：&#10;- ignore previous instructions&#10;- my api_key is sk-xxxxx&#10;- exec('malicious code')"></textarea>
+            <div style="margin-top:15px; display:flex; gap:10px;">
+                <button class="btn btn-primary" onclick="scanText()">🔍 开始扫描</button>
+                <button class="btn" style="background:rgba(255,255,255,0.1);color:#fff;" onclick="document.getElementById('scanText').value=''">🗑️ 清空</button>
+            </div>
+            <div id="textLoading" class="loading"><div class="spinner"></div><p>扫描中...</p></div>
+            <div id="textResults" class="results"></div>
+        </div>
+        
+        <!-- 文件扫描 -->
+        <div id="tab-file" class="card" style="display:none;">
+            <h2><span class="icon">📁</span> 文件扫描</h2>
+            <p style="color:#aaa; margin-bottom:15px;">上传文件进行AI漏洞和病毒扫描</p>
+            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="icon">📂</div>
+                <p>点击选择文件或拖拽文件到此处</p>
+                <p style="font-size:0.8rem; margin-top:5px;">支持: .txt, .md, .py, .js, .html, .json, .xml, .docx 等</p>
+            </div>
+            <input type="file" id="fileInput" style="display:none" onchange="handleFileSelect(this.files)">
+            <div id="fileLoading" class="loading"><div class="spinner"></div><p>扫描中...</p></div>
+            <div id="fileResults" class="results"></div>
+        </div>
+        
+        <!-- 批量扫描 -->
+        <div id="tab-batch" class="card" style="display:none;">
+            <h2><span class="icon">📦</span> 批量扫描</h2>
+            <p style="color:#aaa; margin-bottom:15px;">批量上传多个文件进行扫描</p>
+            <div class="drop-zone" onclick="document.getElementById('batchInput').click()">
+                <div class="icon">📦</div>
+                <p>点击选择多个文件或拖拽文件到此处</p>
+            </div>
+            <input type="file" id="batchInput" multiple style="display:none" onchange="handleBatchSelect(this.files)">
+            <div id="batchLoading" class="loading"><div class="spinner"></div><p>批量扫描中...</p></div>
+            <div id="batchResults" class="results"></div>
+        </div>
+        
+        <!-- 检测规则 -->
+        <div id="tab-rules" class="card" style="display:none;">
+            <h2><span class="icon">📋</span> 检测规则库</h2>
+            <div id="rulesContent"></div>
+        </div>
+        
+        <!-- 安全日志 -->
+        <div id="tab-logs" class="card" style="display:none;">
+            <h2><span class="icon">📊</span> 安全日志</h2>
+            <div style="margin-bottom:15px; display:flex; gap:10px;">
+                <select id="logFilter" onchange="loadLogs()" style="background:rgba(0,0,0,0.3); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:8px; border-radius:5px;">
+                    <option value="">全部</option>
+                    <option value="CRITICAL">严重</option>
+                    <option value="HIGH">高危</option>
+                    <option value="MEDIUM">中危</option>
+                    <option value="LOW">低危</option>
+                </select>
+                <button class="btn btn-primary" onclick="loadLogs()">🔄 刷新</button>
+            </div>
+            <div id="logsContent"></div>
+        </div>
+        
+        <div class="footer">
+            AI漏洞防护与扫毒系统 v1.0.0 | Built with Flask + Python
+        </div>
+    </div>
+    
+    <script>
+        // Tab切换
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).style.display = 'block';
+            if (tab === 'rules') loadRules();
+            if (tab === 'logs') loadLogs();
+        }
+        
+        // Toast通知
+        function showToast(msg, type='success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // 文本扫描
+        async function scanText() {
+            const text = document.getElementById('scanText').value.trim();
+            if (!text) { showToast('请输入要扫描的文本', 'error'); return; }
+            
+            document.getElementById('textLoading').classList.add('active');
+            document.getElementById('textResults').innerHTML = '';
+            
+            try {
+                const res = await fetch('/api/scan/text', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text, filename: 'text_input'})
+                });
+                const data = await res.json();
+                document.getElementById('textLoading').classList.remove('active');
+                
+                if (data.success) {
+                    renderResults('textResults', data.results, data.summary);
+                    showToast(`扫描完成！发现 ${data.summary.total} 个威胁`, data.summary.critical > 0 ? 'error' : 'success');
+                } else {
+                    showToast(data.error || '扫描失败', 'error');
+                }
+            } catch(e) {
+                document.getElementById('textLoading').classList.remove('active');
+                showToast('扫描出错: ' + e.message, 'error');
+            }
+        }
+        
+        // 文件扫描
+        function handleFileSelect(files) {
+            if (!files.length) return;
+            const file = files[0];
+            uploadFile(file);
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('fileLoading').classList.add('active');
+            document.getElementById('fileResults').innerHTML = '';
+            
+            try {
+                const res = await fetch('/api/scan/file', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                document.getElementById('fileLoading').classList.remove('active');
+                
+                if (data.success) {
+                    renderFileResults('fileResults', data);
+                    showToast(`文件 ${data.filename} 扫描完成！`, data.summary.critical > 0 ? 'error' : 'success');
+                } else {
+                    showToast(data.error || '扫描失败', 'error');
+                }
+            } catch(e) {
+                document.getElementById('fileLoading').classList.remove('active');
+                showToast('扫描出错: ' + e.message, 'error');
+            }
+        }
+        
+        // 批量扫描
+        function handleBatchSelect(files) {
+            if (!files.length) return;
+            uploadBatch(files);
+        }
+        
+        async function uploadBatch(files) {
+            const formData = new FormData();
+            for (let f of files) formData.append('files', f);
+            
+            document.getElementById('batchLoading').classList.add('active');
+            document.getElementById('batchResults').innerHTML = '';
+            
+            try {
+                const res = await fetch('/api/scan/batch', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                document.getElementById('batchLoading').classList.remove('active');
+                
+                if (data.success) {
+                    renderBatchResults('batchResults', data);
+                    showToast(`批量扫描完成！共扫描 ${data.files_scanned} 个文件`);
+                } else {
+                    showToast(data.error || '扫描失败', 'error');
+                }
+            } catch(e) {
+                document.getElementById('batchLoading').classList.remove('active');
+                showToast('扫描出错: ' + e.message, 'error');
+            }
+        }
+        
+        // 渲染结果
+        function renderResults(containerId, results, summary) {
+            const container = document.getElementById(containerId);
+            if (!results || !results.length) {
+                container.innerHTML = '<div class="result-item clean"><div class="title">✅ 未检测到威胁</div><div class="desc">扫描完成，未发现安全问题</div></div>';
+                return;
+            }
+            
+            let html = '';
+            if (summary) {
+                html += `<div class="stats">
+                    <div class="stat-box"><div class="number">${summary.total}</div><div class="label">总威胁</div></div>
+                    <div class="stat-box critical"><div class="number">${summary.critical}</div><div class="label">严重</div></div>
+                    <div class="stat-box high"><div class="number">${summary.high}</div><div class="label">高危</div></div>
+                    <div class="stat-box medium"><div class="number">${summary.medium}</div><div class="label">中危</div></div>
+                </div>`;
+            }
+            
+            results.forEach(r => {
+                if (r.type === 'clean' || r.type === 'error' || r.type === 'file_info') return;
+                const severityClass = r.severity ? r.severity.toLowerCase() : 'low';
+                html += `<div class="result-item ${severityClass}">
+                    <div class="title">
+                        <span class="severity-badge severity-${r.severity}">${r.severity}</span>
+                        ${r.name}
+                    </div>
+                    <div class="desc">${r.description}</div>
+                    ${r.match ? `<div class="desc" style="margin-top:8px;"><strong>匹配内容:</strong> <span class="match">${escapeHtml(r.match)}</span></div>` : ''}
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function renderFileResults(containerId, data) {
+            const container = document.getElementById(containerId);
+            let html = `<div class="stats">
+                <div class="stat-box"><div class="number">${data.summary.total}</div><div class="label">威胁</div></div>
+                <div class="stat-box critical"><div class="number">${data.summary.critical}</div><div class="label">严重</div></div>
+                <div class="stat-box high"><div class="number">${data.summary.high}</div><div class="label">高危</div></div>
+                <div class="stat-box medium"><div class="number">${data.summary.medium}</div><div class="label">中危</div></div>
+                <div class="stat-box clean"><div class="number">${data.summary.clean ? '✓' : '✗'}</div><div class="label">安全</div></div>
+            </div>`;
+            
+            html += `<h3 style="margin:15px 0 10px; color:#00d2ff;">文件: ${data.filename} (${formatSize(data.file_size)})</h3>`;
+            
+            data.results.forEach(r => {
+                if (r.type === 'clean') {
+                    html += `<div class="result-item clean"><div class="title">✅ ${r.name}</div><div class="desc">${r.description} | Hash: ${r.hash ? r.hash.substring(0,16) + '...' : 'N/A'}</div></div>`;
+                } else if (r.type === 'virus') {
+                    const severityClass = r.severity ? r.severity.toLowerCase() : 'low';
+                    html += `<div class="result-item ${severityClass}"><div class="title"><span class="severity-badge severity-${r.severity}">${r.severity}</span> ${r.name}</div><div class="desc">${r.description}</div></div>`;
+                } else if (r.type === 'ai_vulnerability') {
+                    const severityClass = r.severity ? r.severity.toLowerCase() : 'low';
+                    html += `<div class="result-item ${severityClass}"><div class="title"><span class="severity-badge severity-${r.severity}">${r.severity}</span> ${r.name}</div><div class="desc">${r.description}</div>${r.match ? `<div class="desc" style="margin-top:8px;"><strong>匹配:</strong> <span class="match">${escapeHtml(r.match)}</span></div>` : ''}</div>`;
+                }
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function renderBatchResults(containerId, data) {
+            const container = document.getElementById(containerId);
+            let html = `<h3 style="margin-bottom:15px;">批量扫描结果 (${data.files_scanned} 个文件)</h3>`;
+            
+            data.results.forEach(f => {
+                const severityClass = f.summary.critical > 0 ? 'critical' : f.summary.high > 0 ? 'high' : f.summary.medium > 0 ? 'medium' : 'clean';
+                html += `<div class="result-item ${severityClass}">
+                    <div class="title">📄 ${f.filename} - 发现 ${f.summary.total} 个威胁</div>
+                    <div class="desc">严重: ${f.summary.critical} | 高危: ${f.summary.high} | 中危: ${f.summary.medium}</div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // 加载规则
+        async function loadRules() {
+            try {
+                const res = await fetch('/api/rules');
+                const data = await res.json();
+                let html = '';
+                
+                html += '<h3 style="color:#00d2ff; margin:15px 0 10px;">AI漏洞检测规则</h3>';
+                Object.entries(data.ai_vuln_rules).forEach(([id, rule]) => {
+                    html += `<div class="result-item ${rule.severity.toLowerCase()}">
+                        <div class="title"><span class="severity-badge severity-${rule.severity}">${rule.severity}</span> ${rule.name}</div>
+                        <div class="desc">${rule.description}</div>
+                    </div>`;
+                });
+                
+                html += '<h3 style="color:#00d2ff; margin:20px 0 10px;">病毒特征库</h3>';
+                Object.entries(data.virus_signatures).forEach(([id, sig]) => {
+                    html += `<div class="result-item ${sig.severity.toLowerCase()}">
+                        <div class="title"><span class="severity-badge severity-${sig.severity}">${sig.severity}</span> ${sig.name}</div>
+                        <div class="desc">扩展名: ${sig.extensions.join(', ')}</div>
+                    </div>`;
+                });
+                
+                document.getElementById('rulesContent').innerHTML = html;
+            } catch(e) {
+                showToast('加载规则失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 加载日志
+        async function loadLogs() {
+            const filter = document.getElementById('logFilter').value;
+            try {
+                const res = await fetch('/api/logs' + (filter ? '?severity=' + filter : ''));
+                const data = await res.json();
+                let html = `<p style="color:#aaa; margin-bottom:15px;">共 ${data.total} 条日志记录</p>`;
+                
+                if (data.logs.length === 0) {
+                    html += '<p style="color:#aaa;">暂无日志记录</p>';
+                } else {
+                    html += '<table class="log-table"><tr><th>时间</th><th>类型</th><th>严重度</th><th>描述</th></tr>';
+                    data.logs.reverse().forEach(log => {
+                        html += `<tr>
+                            <td>${log.timestamp ? log.timestamp.substring(11,19) : 'N/A'}</td>
+                            <td>${log.name || 'N/A'}</td>
+                            <td><span class="severity-badge severity-${log.severity}">${log.severity}</span></td>
+                            <td>${log.description || 'N/A'}</td>
+                        </tr>`;
+                    });
+                    html += '</table>';
+                }
+                
+                document.getElementById('logsContent').innerHTML = html;
+            } catch(e) {
+                showToast('加载日志失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 工具函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+            return (bytes/(1024*1024)).toFixed(1) + ' MB';
+        }
+        
+        // 拖放支持
+        const dropZone = document.getElementById('dropZone');
+        if (dropZone) {
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length) uploadFile(files[0]);
+            });
+        }
+    </script>
+</body>
+</html>
