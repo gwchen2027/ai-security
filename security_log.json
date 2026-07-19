@@ -1,0 +1,26 @@
+[
+  {
+    "type": "ai_vulnerability",
+    "rule_id": "prompt_injection",
+    "name": "Prompt注入攻击",
+    "severity": "HIGH",
+    "description": "检测到可能的Prompt注入攻击，试图绕过AI安全限制",
+    "match": "ignore all previous instructions",
+    "position": 0,
+    "filename": "test.txt",
+    "source": "text_scan",
+    "timestamp": "2026-05-22T23:27:40.136961"
+  },
+  {
+    "type": "ai_vulnerability",
+    "rule_id": "prompt_injection",
+    "name": "Prompt注入攻击",
+    "severity": "HIGH",
+    "description": "检测到可能的Prompt注入攻击，试图绕过AI安全限制",
+    "match": "you are a hacker",
+    "position": 34,
+    "filename": "test.txt",
+    "source": "text_scan",
+    "timestamp": "2026-05-22T23:27:40.136974"
+  }
+]
